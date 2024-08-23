@@ -1,4 +1,8 @@
 require('dotenv').config();
+
+const path = require('path');
+const fs = require('fs');
+
 const express = require('express')  // Importing express framework
 const app = express()   // Creating instance/application object of Express application
 const server = require('http').Server(app)  // importing http a built-in module like fs(file-system) module for handling http requests and responses

@@ -120,16 +120,17 @@ navigator.mediaDevices.getUserMedia({
 
     //---------------------------------------------------------------------------------------------------------------
     // ---------------------------------------------Send Invite mail---------------------------------------------------
-    const emailId = document.querySelector('.emailInput').value;
+    
     const sendemail = document.querySelector('.sendEmail');
-    function sendInvite() {
+    function sendInvite(emailId) {
         socket.emit('sendInvite', emailId);
     }
 
     sendemail.addEventListener('click', () => {
+        const emailId = document.querySelector('.emailInput').value;
         if (emailId != '') {
-            emailId = '';
-            sendInvite();
+            // emailId = '';
+            sendInvite(emailId);
         }
     })
 
