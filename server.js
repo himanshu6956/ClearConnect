@@ -16,6 +16,7 @@ const passport = require('passport');
 const session = require('express-session');
 const GoogleStrategy = require('passport-google-oauth2').Strategy;
 
+const tokenStore = {}; // Store tokens mapped to room IDs
 
 passport.serializeUser((user, done) => {
     done(null, user);
@@ -90,8 +91,19 @@ app.get('/google/callback', passport.authenticate('google', { failureRedirect: '
     }
 });
 
-app.get('/auth-redirect/:room', (req, res, next) => {
-        const roomId = req.params.room;
+app.get('/auth-redirect/:token', (req, res, next) => {
+        const token = req.params.token;
+        console.log("token received", token);
+        const roomId = tokenStore[token];
+
+        console.log("roomID", roomId);
+
+        delete tokenStore[token];
+
+        if (!roomId) {
+            return res.status(400).send("Invalid or expired Invite.");
+        }
+
         const state = JSON.stringify({ roomId });
         // req.session.redirectTo = `/${req.params.room}`; // Store the room ID in the session
         // console.log(`Redirecting to: ${req.session.redirectTo}`);
@@ -146,7 +158,13 @@ app.get('/:room', (req, res) => {
 function getHtmlTemplate(roomId) {
     const templatePath = path.join(__dirname, 'mail_template.html');
     let htmlTemplate = fs.readFileSync(templatePath, 'utf8');
-    const link = `http://localhost:8080/auth-redirect/${roomId}`;
+
+    // Generate a unique token
+    const token = uuidV4();
+    // Store the token and roomId in a secure way (e.g., in-memory or database)
+    tokenStore[token] = roomId;
+
+    const link = `http://localhost:8080/auth-redirect/${token}`;
     
     // Replace placeholders with the actual link
     htmlTemplate = htmlTemplate.replace(/%%LINK%%/g, link);
