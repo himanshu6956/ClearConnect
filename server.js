@@ -1,5 +1,7 @@
 require('dotenv').config();
 
+
+
 const path = require('path');
 const fs = require('fs');
 
@@ -74,17 +76,53 @@ app.get('/', (req, res) => {
 app.get('/google', passport.authenticate('google', { scope: ['email', 'profile'] }));
 
 // Auth Callback
-app.get('/google/callback', passport.authenticate('google', {
-    successRedirect: '/google/callback/success',
-    failureRedirect: '/google/callback/failure'
-}));
+// app.get('/google/callback', passport.authenticate('google', {
+//     successRedirect: '/google/callback/success',
+//     failureRedirect: '/google/callback/failure'
+// }));
+app.get('/google/callback', passport.authenticate('google', { failureRedirect: '/google/callback/failure' }), (req, res) => {
+    const state = req.query.state ? JSON.parse(req.query.state) : null;
+
+    if (state && state.roomId) {
+        res.redirect(`/${state.roomId}`);
+    } else {
+        res.redirect('/start');
+    }
+});
+
+app.get('/auth-redirect/:room', (req, res, next) => {
+        const roomId = req.params.room;
+        const state = JSON.stringify({ roomId });
+        // req.session.redirectTo = `/${req.params.room}`; // Store the room ID in the session
+        // console.log(`Redirecting to: ${req.session.redirectTo}`);
+        // next(); // Proceed to the next middleware (Google OAuth)
+        passport.authenticate('google', { scope: ['email', 'profile'], state })(req, res, next);
+});
+
 
 // Success
-app.get('/google/callback/success', (req, res) => {
-    if (!req.user)
-        return res.redirect('/google/callback/failure');
-    res.render('start');
-});
+// app.get('/google/callback/success', (req, res) => {
+//     if (!req.user)
+//         return res.redirect('/google/callback/failure');
+//     res.render('start');
+// });
+// app.get('/google/callback/success', (req, res) => {
+//     if (!req.user) {
+//         return res.redirect('/google/callback/failure');
+//     }
+//     console.log(`Session redirectTo: ${req.session.redirectTo}`);
+//     if(req.session.redirectTo)
+//     {
+//         const redirectTo = req.session.redirectTo;
+//         delete req.session.redirectTo; // Clean up the session
+//         res.redirect(redirectTo); // Redirect to the room
+//     }
+//     else{
+//         res.redirect('/start'); // Redirect to the room
+//     }
+    
+    
+// });
 
 // Failure
 app.get('/google/callback/failure', (req, res) => {
@@ -108,7 +146,7 @@ app.get('/:room', (req, res) => {
 function getHtmlTemplate(roomId) {
     const templatePath = path.join(__dirname, 'mail_template.html');
     let htmlTemplate = fs.readFileSync(templatePath, 'utf8');
-    const link = `http://localhost:8080/${roomId}`;
+    const link = `http://localhost:8080/auth-redirect/${roomId}`;
     
     // Replace placeholders with the actual link
     htmlTemplate = htmlTemplate.replace(/%%LINK%%/g, link);
