@@ -97,7 +97,7 @@ app.get('/auth-redirect/:token', (req, res, next) => {
         const roomId = tokenStore[token];
 
         console.log("roomID", roomId);
-
+        if(roomId)
         delete tokenStore[token];
 
         if (!roomId) {
